@@ -9,7 +9,6 @@ Created on Fri Jul 21 21:27:31 2023
 import random
 import string
 import hashlib
-import matplotlib.pyplot as plt
 
 # Function to generate a random string of given length
 def generate_random_string(length):
