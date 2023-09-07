@@ -3,11 +3,17 @@ import hashlib
 import math
 import time
 import threading
+import random 
+import mmh3
 
 number_of_ssds = 4
 msb_number = int(math.log(number_of_ssds, 2))
 
 hashed_buffers = []
+arrival_buffer = queue.Queue()
+
+def generate_random_value():
+    return bytes(random.getrandbits(8) for _ in range(4096))
 
 for i in range(number_of_ssds):
     tq = queue.Queue()
@@ -19,7 +25,7 @@ class key_value_pair:
         self.value = value
 
 def hash_function(key):
-    return int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], byteorder='big')
+    return mmh3.hash64(str(key), seed=0)[0]
 
 def extract_msbs(value, num_bits):
     mask = (1 << num_bits) - 1
@@ -27,18 +33,26 @@ def extract_msbs(value, num_bits):
     return msbs
 
 def input_func(arrival_buffer):
-    while True:
-        key = input("Enter the logical block address (or 'exit' to stop): ")
-        if key.lower() == 'exit':
-            break
-        value = input("Enter the value: ")
-        kv_pair = key_value_pair(key, value)
+    #while True:
+     #   key = input("Enter the logical block address (or 'exit' to stop): ")
+      #  if key.lower() == 'exit':
+      #      break
+       # value = input("Enter the value: ")
+       # kv_pair = key_value_pair(key, value)
+       # arrival_buffer.put(kv_pair)
+       # print(arrival_buffer.qsize())
+    #time.sleep(1)
+    for _ in range(10000):
+        address = random.randint(0, 2**32 - 1)
+        value = generate_random_value()
+        kv_pair = key_value_pair(address,value)
         arrival_buffer.put(kv_pair)
-        print(arrival_buffer.qsize())
-    time.sleep(1)
+        time.sleep(0.1)
+
+    
 
 def output(kv_pair):
-    print("Hashed Key:", kv_pair[0], "Value:", kv_pair[1])
+    print("address sending to ssd:", kv_pair[0])
 
 def bucket_sort(msbs, kv_pair, hashed_key):
     i = msbs
@@ -70,11 +84,10 @@ def switch(hashed_buffers):
             print("size of hashed bucket:",hashed_buffers[i].qsize())
             if not hashed_buffers[i].empty():
                 kv_pair = hashed_buffers[i].get()
-                print("switch: Outputting", kv_pair)
                 output(kv_pair)
         time.sleep(5)
 
-arrival_buffer = queue.Queue()
+
 
 input_thread = threading.Thread(target=input_func, args=(arrival_buffer,),daemon=True)
 sort_thread = threading.Thread(target=kv_process, args=(arrival_buffer,))
