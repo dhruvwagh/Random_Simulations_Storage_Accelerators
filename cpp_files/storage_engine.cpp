@@ -4,12 +4,10 @@
 #include <chrono>
 #include <vector>
 #include <random>
-#include "MurmurHash3.h"
+#include </home/arch/Documents/Random_Simulations_Storage_Accelerators/cpp_files/smhasher/src/MurmurHash3.cpp>
 
 const int number_of_ssds = 4;
 const int msb_number = static_cast<int>(log2(number_of_ssds));
-std::vector<std::queue<std::pair<uint64_t, std::vector<uint8_t>>>> hashed_buffers;
-std::queue<std::pair<uint32_t, std::vector<uint8_t>>> arrival_buffer;
 
 std::vector<uint8_t> generate_random_value() {
     std::vector<uint8_t> value(4096);
@@ -27,8 +25,11 @@ public:
     uint32_t key;
     std::vector<uint8_t> value;
 
-    key_value_pair(uint32_t k, std::vector<uint8_t> v) : key(k), value(v) {}
+    key_value_pair(uint32_t k, const std::vector<uint8_t>& v) : key(k), value(v) {}
 };
+
+std::vector<std::queue<std::pair<uint64_t, std::vector<uint8_t>>>> hashed_buffers;
+std::queue<std::pair<uint32_t, std::vector<uint8_t>>> arrival_buffer;
 
 uint64_t hash_function(uint32_t key) {
     uint64_t hash[2];
@@ -42,15 +43,17 @@ uint32_t extract_msbs(uint64_t value, int num_bits) {
     return msbs;
 }
 
-void input_func(std::queue<std::pair<uint32_t, std::vector<uint8_t>>>& arrival_buffer) {
+void input_func(std::queue<key_value_pair>& arrival_buffer) {
     for (int i = 0; i < 10000; ++i) {
         uint32_t address = rand() % (1UL << 32);
         std::vector<uint8_t> value = generate_random_value();
-        key_value_pair kv_pair(address, value);
+        key_value_pair kv_pair(address, value); // Create a key_value_pair object
         arrival_buffer.push(kv_pair);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
+
+
 
 void output(const std::pair<uint64_t, std::vector<uint8_t>>& kv_pair) {
     std::cout << "address sending to ssd: " << kv_pair.first << std::endl;
@@ -64,7 +67,7 @@ void bucket_sort(int msbs, const key_value_pair& kv_pair, uint64_t hashed_key) {
     std::cout << "buffer size: " << hashed_buffers[i].size() << std::endl;
 }
 
-void kv_process(std::queue<std::pair<uint32_t, std::vector<uint8_t>>>& arrival_buffer) {
+void kv_process(std::queue<key_value_pair>& arrival_buffer) {
     std::cout << "kv_process thread started." << std::endl;
     while (true) {
         if (arrival_buffer.empty()) {
@@ -82,6 +85,8 @@ void kv_process(std::queue<std::pair<uint32_t, std::vector<uint8_t>>>& arrival_b
         }
     }
 }
+
+
 
 void switch_function(std::vector<std::queue<std::pair<uint64_t, std::vector<uint8_t>>>>& hashed_buffers) {
     std::cout << "switch thread started." << std::endl;
@@ -105,9 +110,11 @@ int main() {
         hashed_buffers.push_back(tq);
     }
 
-    std::thread input_thread(input_func, std::ref(arrival_buffer));
-    std::thread sort_thread(kv_process, std::ref(arrival_buffer));
-    std::thread spit_thread(switch_function, std::ref(hashed_buffers));
+    std::thread input_thread([&]() { input_func(arrival_buffer); });
+    std::thread sort_thread([&]() { kv_process(arrival_buffer); });
+    std::thread spit_thread([&]() { switch_function(hashed_buffers); });
+
+
 
     input_thread.join();
     sort_thread.join();
