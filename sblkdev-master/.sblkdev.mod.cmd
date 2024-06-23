@@ -1,0 +1,1 @@
+cmd_/home/dhruv/Documents/WORK/Random_Simulations_Storage_Accelerators/sblkdev-master/sblkdev.mod := printf '%s\n'   main.o device.o | awk '!x[$$0]++ { print("/home/dhruv/Documents/WORK/Random_Simulations_Storage_Accelerators/sblkdev-master/"$$0) }' > /home/dhruv/Documents/WORK/Random_Simulations_Storage_Accelerators/sblkdev-master/sblkdev.mod
