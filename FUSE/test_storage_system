@@ -1,0 +1,66 @@
+import random
+import threading
+from storage_system import StorageHandler
+
+def random_string(length):
+    return ''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for _ in range(length))
+
+def worker(storage, file_path, operation_count):
+    for _ in range(operation_count):
+        op = random.choice(['read', 'write'])
+        if op == 'read':
+            offset = random.randint(0, 9000)
+            size = random.randint(100, 1000)
+            try:
+                data = storage.read_file(file_path, offset, size)
+                print(f"Read from {file_path}: {len(data)} bytes")
+            except IOError as e:
+                print(f"Error reading {file_path}: {str(e)}")
+        else:
+            offset = random.randint(0, 9000)
+            data = random_string(random.randint(100, 1000)).encode()
+            try:
+                storage.write_file(file_path, offset, data)
+                print(f"Wrote to {file_path}: {len(data)} bytes")
+            except IOError as e:
+                print(f"Error writing to {file_path}: {str(e)}")
+
+def run_test(num_drives, drive_capacity, io_speeds, num_files, threads_per_file, operations_per_thread):
+    storage = StorageHandler(num_drives=num_drives, drive_capacity=drive_capacity, io_speeds=io_speeds)
+
+    # Create files
+    for i in range(num_files):
+        file_path = f"/file{i}.txt"
+        initial_size = random.randint(10000, 100000)
+        storage.create_file(file_path, initial_size)
+        print(f"Created {file_path} with initial size {initial_size}")
+
+    # Run worker threads
+    threads = []
+    for i in range(num_files):
+        for _ in range(threads_per_file):
+            t = threading.Thread(target=worker, args=(storage, f"/file{i}.txt", operations_per_thread))
+            threads.append(t)
+            t.start()
+
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+
+    # Print statistics
+    stats = storage.get_stats()
+    print("\nDrive Statistics:")
+    for i, stat in enumerate(stats):
+        print(f"Drive {i}: Average latency = {stat:.6f} seconds")
+    print(f"Overall average latency: {sum(stats)/len(stats):.6f} seconds")
+
+if __name__ == "__main__":
+    # Test parameters
+    NUM_DRIVES = 5
+    DRIVE_CAPACITY = 1000000  # blocks
+    IO_SPEEDS = [100, 120, 80, 110, 90]  # MB/s for each drive
+    NUM_FILES = 10
+    THREADS_PER_FILE = 3
+    OPERATIONS_PER_THREAD = 50
+
+    run_test(NUM_DRIVES, DRIVE_CAPACITY, IO_SPEEDS, NUM_FILES, THREADS_PER_FILE, OPERATIONS_PER_THREAD)
