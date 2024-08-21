@@ -1,0 +1,8 @@
+benchmark: (g=0): rw=randrw, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=sync, iodepth=32
+fio-3.28
+Starting 1 process
+benchmark: Laying out IO file (1 file / 1024MiB)
+fio: pid=0, err=13/file:filesetup.c:174, func=open, error=Permission denied
+
+
+Run status group 0 (all jobs):

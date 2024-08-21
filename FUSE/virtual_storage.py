@@ -20,11 +20,13 @@ class VirtualStorage(Operations):
         return self.data[path][offset:offset + size]
 
     def write(self, path, data, offset, fh):
-        self.data[path] = self.data.get(path, '') + data
+        if path not in self.data:
+            self.data[path] = b''
+        self.data[path] = self.data[path][:offset] + data + self.data[path][offset + len(data):]
         return len(data)
 
     def create(self, path, mode):
-        self.data[path] = ''
+        self.data[path] = b''
         return 0
 
     def unlink(self, path):
@@ -43,9 +45,12 @@ class VirtualStorage(Operations):
     def fsync(self, path, datasync, fh):
         return 0
 
+    def readdir(self, path, fh):
+        return ['.', '..'] + [os.path.basename(x) for x in self.data.keys()]
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print('usage: %s <mountpoint>' % sys.argv[0])
         sys.exit(1)
 
-    fuse = FUSE(VirtualStorage(), sys.argv[1], foreground=True)
+    fuse = FUSE(VirtualStorage(), sys.argv[1], foreground=True, nonempty=True)
