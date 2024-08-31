@@ -59,7 +59,7 @@ if __name__ == "__main__":
     NUM_DRIVES = 5
     DRIVE_CAPACITY = 1000000  # blocks
     IO_SPEEDS = [100, 120, 80, 110, 90]  # MB/s for each drive
-    NUM_FILES = 10
+    NUM_FILES = 
     THREADS_PER_FILE = 3
     OPERATIONS_PER_THREAD = 50
 
