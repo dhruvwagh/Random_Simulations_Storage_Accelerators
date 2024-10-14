@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Configuration
 MOUNT_POINT = "/mnt/virtualdrive"
-FUSE_SCRIPT_PATH = "/home/parallels/Documents/Random_Simulations_Storage_Accelerators/FUSE/storage_accelerator.py"  # Update with the actual path to your FUSE script
+FUSE_SCRIPT_PATH = "/path/to/storage_accelerator.py"  # Update with the actual path to your FUSE script
 NUM_DRIVES = 3
 FIO_OUTPUT_FILE = "fio_results.txt"
 
@@ -16,11 +16,20 @@ def mount_fuse():
     subprocess.Popen(mount_cmd, shell=True)
     time.sleep(3)  # Wait a bit for the mount to complete
 
+def is_mounted(mount_point):
+    with open('/etc/mtab', 'r') as mtab:
+        for line in mtab:
+            if mount_point in line:
+                return True
+    return False
+
 def unmount_fuse():
-    # Unmount the FUSE filesystem
-    print("Unmounting FUSE-based storage system...")
-    unmount_cmd = f"fusermount -u {MOUNT_POINT}"
-    subprocess.run(unmount_cmd, shell=True)
+    if is_mounted(MOUNT_POINT):
+        print("Unmounting FUSE-based storage system...")
+        unmount_cmd = f"fusermount -u {MOUNT_POINT}"
+        subprocess.run(unmount_cmd, shell=True)
+    else:
+        print(f"Mount point {MOUNT_POINT} is not mounted.")
 
 def run_fio_test():
     # Run FIO benchmark
